@@ -1,0 +1,735 @@
+metadata:
+  title: California Consumer Privacy Act Request App
+  short title: CCPA Request App
+  comment: Test for an App to help CA residents control their data.
+---
+objects:
+  - client: Individual
+  # current issues:
+    #creating another request at the end of the form does not properly loop the process
+    #checkboxes can check multiple fields
+    #remove DOCX option for email and maybe even PDF attachment
+---
+mandatory: True
+code: |
+  intro_screen_continue
+  if client_CA_resident:
+    CA_info_presented
+  else: 
+    not_CA_final_screen
+  client_issue_yes
+  if client_issue_yes:
+    company_name_complaint
+  else: 
+    no_issue_final_screen
+  find_contact_information
+  if user_request_type['email']:
+    business_email_address
+  if user_request_type['website']:
+    business_ccpa_form
+  if user_request_type['neither']:
+    no_contact_info
+  client.name.first
+  client.todays_date
+  client.phone_number
+  email_address
+  if data_ask['knowledge'] \
+     and user_request_type['email']:
+       downloaded_right_to_know_email
+  if data_ask['knowledge'] \
+     and user_request_type['website']:
+       downloaded_right_to_know_website
+  if data_ask['knowledge'] \
+     and user_request_type['neither']:
+       downloaded_right_to_know_default
+  if data_ask['opting'] \
+     and user_request_type['email']:
+       downloaded_opt_out_email
+  if data_ask['opting'] \
+     and user_request_type['website']:
+       downloaded_opt_out_website
+  if data_ask['opting'] \
+     and user_request_type['neither']:
+       downloaded_opt_out_default
+  if data_ask['deletion'] \
+     and user_request_type['email']:
+       downloaded_right_to_delete_email
+  if data_ask['deletion'] \
+     and user_request_type['website']:
+       downloaded_right_to_delete_website
+  if data_ask['deletion'] \
+     and user_request_type['neither']:
+       downloaded_right_to_delete_default
+  if user_has_another_complaint == "True":
+    client_issue_yes
+---
+id: What is the name of the user?
+question: |
+  What is your name?
+subquestion: |
+  *This information will be used to generate the text for your request and will not be used for any other purpose*
+fields:
+  - First Name: client.name.first
+  - Middle Name: client.name.middle
+    required: False
+  - Last Name: client.name.last
+  - Suffix: client.name.suffix
+    required: False
+---
+id: introductory screen
+question: |
+  California Consumer Protection Act Request Form
+subquestion: |
+  **Welcome to the CCPA Assistance request form.**
+    
+  This form explains who and what is covered by the CCPA, describes how you can exercise your rights, and provides auto-generated text for you to make a formal request with.
+  
+  The CCPA gives California residents important rights regarding their personal information and allows them to request data-collecting businesses to handle their personal information in various ways.
+  
+  ${ collapse_template(why_user_cares) }
+continue button field: intro_screen_continue
+---
+template: why_user_cares
+subject: |
+  Why Should You Care?
+content: |
+  Today, it's a standard practice for businesses to use your personal information for many different purposes. A lot of information about you and your household can be collected with or without your knowledge, which can be used by individual businesses, shared with related companies, and made available to others. 
+  
+  Information that is gathered about you is combined and analyzed to create profiles of your preferences, behavior, attitudes, abilities and other characteristics. Exercising your rights to limit the data businesses can use, store, and share  can help protect you from unwanted, unfair, or harmful uses of your personal information. 
+action buttons: 
+  - label: Learn More
+    action: https://www.consumer-action.org/downloads/english/CCPA-Privacy-Rights_2022.pdf
+    color: success
+    icon: sign-out-alt
+    new window: True
+---
+id: Does the user reside in California?
+question: |
+  Do you live in California?
+fields:
+  - no label: client_CA_resident
+    datatype: yesnoradio
+---
+id: information for California resident regarding data control.
+question: |
+  As a California resident, you have the right to:
+subquestion: |
+  - **Know** the types of personal information a business collects about you and how it's         used, as well as **see** the specific pieces of personal information a business has           collected about you.
+  - **Delete** the personal information a business collected about you.
+  - **Opt-out of the sale** of your personal information.
+  
+  Some of the rights the CCPA grants are automatic, while others require you to take steps to     exercise them. 
+  ${ collapse_template(ccpa_for_instance) }
+  ${ collapse_template(ccpa_additional_info) }
+  
+continue button field: CA_info_presented
+---
+template: ccpa_for_instance
+subject: |
+  For example
+content: |
+  California citizens automatically have the right not to be discriminated against by a business for exercising their CCPA rights. 
+  
+  In contrast, California residents must actively notify businesses when they want to know, delete, or opt-out of the sale of their personal information. The CCPA also allows California residents to sue a business if it fails to implement reasonable security measures when their personal information is compromised in a data breach.
+---
+template: ccpa_additional_info
+subject: |
+  Additional CCPA information that may be useful
+content: |
+  - You may make the request to each business **twice a year**, free of charge.
+   
+  - Some businesses provide a form on their website to submit these requests. If you have an account with a business, that business may require you to file your request through the account. However, if you do not have an account, a business cannot require you to create one in order to file a right to know request. Instead, you can contact a business directly (a sample letter is attached below).
+
+  - **A business has 45 days to respond to your request**, although this may be extended for another 45 days for a total of 90 days.
+
+  - A business is allowed to ask you for additional information to verify your request. However, they are not allowed to use that information for purposes other than verifying your request.
+
+  - A business should respond with:
+    
+         (1) The categories of personal information it has collected about you, and
+    
+         (2) The specific pieces of information it has collected about you.
+   
+  - A business may respond with only the categories if it cannot verify your request, however it must tell you what additional information it needs in order to verify your request for the specific pieces of personal information.
+---
+id: determing if there is a business that the user wants to exercise their CCPA rights against.
+question: |
+  Is there a business that you would like to exercise your CCPA rights against?
+fields:
+  - no label: client_issue_yes
+    datatype: yesnoradio
+under: |
+   **Note**: Exercising your CCPA rights includes requesting to know, delete, or opt-out of the sale of your personal information from one specific business that collects your data.
+---
+id: determing the business that the user wants to exercise their CCPA rights against.
+question: |
+  What is the name of the business you would like to exercise your CCPA rights against?
+subquestion: |
+  ${ collapse_template(business_ask) }
+fields:
+  - Company Name: company_name_complaint
+---
+id: does the business qualify as a business for the purposes of the CCPA?
+template: business_ask
+subject: |
+  **Note**: The CCPA only applies to businesses with certain attributes:
+content: |
+    The CCPA only applies to companies that do business in California and do any of the following:
+    
+    **(1)** Have annual gross revenue in excess of $25 million
+    
+    **(2)** Buy, receive, or sell the personal information of 50,000 or more California                   residents per year
+    
+    **(3)** Make at least half of their annual revenue from selling California residents’                 personal information (including data brokers)
+    
+    If you are unsure whether the business is subject to the CCPA, you may still request to control your data. If the the business is not subject to the CCPA, it has no obligation to accept your request and will respond accordingly. 
+---
+id: determining the rights that the user would like to excericse against business.\
+#I don't want the user to be able to check multiple fields in these checkboxes. I like the look of the checkboxes and the datatype that makes it easy for me to use conditional logic on, but I want this question to be knowledge OR opting OR neither.
+question:
+  "Which CCPA right would you like to exercise?"
+fields:
+  - I would like to request ${ company_name_complaint } to:: data_ask
+    datatype: checkboxes
+    choices:
+      - Show me the personal information it collected about me: knowledge
+      - Not sell any more of my personal information: opting
+      - Delete the personal information it collected about me: deletion
+    none of the above: False
+---
+id: informational/instruction page to find emaial address or online form for business complaint
+question: |
+  To exercise your CCPA rights, you will need the contact information for ${ company_name_complaint }
+subquestion: |
+  You can exercise your CCPA rights by contacting ${ company_name_complaint } through:
+  
+  - a **customer support email address** or 
+  
+  - locating ${ company_name_complaint }'s ** online CCPA request form** on its website
+  
+  
+  How would you like to exercise your CCPA rights?
+fields:
+  - Please only choose one option: user_request_type
+    datatype: checkboxes
+    choices:
+      - ${ company_name_complaint } customer support email address: email
+      - ${ company_name_complaint } online CCPA request form: website
+      - I cannot find either: neither
+    none of the above: False
+    maxlength: 1
+  
+continue button field: find_contact_information
+---
+id: user wants to use email address to make request
+question: |
+ What is ${ company_name_complaint }'s contact information?
+subquestion: |
+  Navigate to ${ company_name_complaint }'s website and locate its customer service email address.
+  
+  **Copy and paste ${ company_name_complaint }'s customer support email address below:**
+fields:
+  - Email Address: business_email_address
+---
+id: user wants to use online form to make request
+question: |
+  What is the link to ${ company_name_complaint }'s online CCPA request form?
+subquestion: |
+   Navigate to ${ company_name_complaint }'s website and locate its CCPA privacy request form.
+   
+   **Copy and paste the link to ${ company_name_complaint }'s CCPA privacy request page below:**
+fields:
+  - CCPA Request Form Link: business_ccpa_form
+---
+id: user cannot find email or online form
+question: |
+  If you are unable to find the ${ company_name_complaint } customer support email address or online CCPA request form, try any of the following actions: 
+subquestion: |
+  (1) Google search "${ company_name_complaint } CCPA" for quick access to its CCPA disclaimer
+  
+  (2) Call ${ company_name_complaint } customer service for help
+  
+  (3) Find ${ company_name_complaint }'s headquarters and send a physical letter to its address
+  
+  
+  Even if you are unable to find ${ company_name_complaint }'s contact information, continue with this form to have a formal letter generated.
+
+continue button field: no_contact_info
+---
+id: what is the date
+question: |
+  What is today's date?
+subquestion: |
+  *This information will be used to generate the text for your request and will not be used for any other purpose*
+fields:
+  - Date: client.todays_date
+    datatype: date
+---
+id: what is the users phone number
+question: |
+  What is your phone number?
+subquestion: |
+  *This information will be used to generate the text for your request and will not be used for any other purpose*
+  
+  **Example**: (123)-444-5566
+fields:
+  - Phone Number: client.phone_number
+---
+id: what is the users email address
+question: |
+  What is your email address?
+subquestion: |
+  *This information will be used to generate the text for your request and will not be used for any other purpose*
+  
+  **Example**: person123@website.com
+fields:
+  - Email Address: email_address
+---
+id: document for right to know template DEFAULT
+question: |
+  Here is your document, ${ client.name.first }:
+email address default: |
+  ${ email_address }
+subquestion: |
+  With the text generated below, either: 
+  
+  - Copy and paste it into a business's online CCPA complaint page or 
+  
+  - Send it directly to ${ company_name_complaint }'s customer support email address when you find it's contact information.
+attachments:
+  - name: Right To Know Request Letter
+    filename: rtk_form
+    valid formats:
+      - docx
+      - pdf 
+    content: |
+     Dear Privacy Compliance Officer,
+      
+      My name is ${ client }. I reside in California and am exercising my data access right         under the California Consumer Privacy Act to see a copy of the categories and the             specific pieces of personal information that ${ company_name_complaint } has collected         about me.
+      
+      I request to see a copy of any and all of the records you have pertaining to me               including but not limited to:
+
+
+      (1) Specific pieces of personal information that you have collected about me including all information or content provided or posted by me, any information you have collected about me, or any personal information you have obtained or acquired about me from a third party business or service provider;
+        
+      (2) Any inferences you have made about me;
+        
+      (3) Categories of personal information you have collected about me pursuant to the enumerated list of categories in 1798.140(o);
+        
+      (4) Categories of sources from which my personal information is collected;
+        
+      (5) Categories of personal information that you have sold or disclosed for a business purpose about me by each category of personal information enumerated in 1798.140(o);
+        
+      (6) Categories of third parties to whom my personal information was sold or disclosed for a business purpose; and 
+        
+      (7) The business or commercial purpose for collecting or selling my personal information.
+
+      My email address is ${ email_address } and my phone number is ${ client.phone_number }.        If you need any more information from me, please let me know as soon as possible. If          you cannot comply with my request–either in whole or in part–please state the reason          why you cannot comply. If my request is incomplete, please provide me with specific            instructions on how to complete my request.
+
+
+      Sincerely,
+       
+      ${ client }
+
+continue button field: downloaded_right_to_know_default
+---
+id: document for right to know template EMAIL REQUEST
+question: |
+  Here is your document, ${ client.name.first }:
+email address default: |
+  ${ business_email_address }
+email template: rtk_template_email
+subquestion: |
+    With the text generated below, you have the option to either: 
+    
+    - Copy and paste the text of this letter into an email you create or
+    
+    - Send your request directly to ${ company_name_complaint } with the push of the "Send"         button below.
+attachments:
+  - name: Right To Know Request Letter
+    filename: rtk_form_email
+    valid formats:
+      - docx
+      - pdf 
+    content: |
+     Dear Privacy Compliance Officer,
+      
+      My name is ${ client }. I reside in California and am exercising my data access right         under the California Consumer Privacy Act to see a copy of the categories and the             specific pieces of personal information that ${ company_name_complaint } has collected         about me.
+      
+      I request to see a copy of any and all of the records you have pertaining to me               including but not limited to:
+
+
+      (1) Specific pieces of personal information that you have collected about me including all information or content provided or posted by me, any information you have collected about me, or any personal information you have obtained or acquired about me from a third party business or service provider;
+        
+      (2) Any inferences you have made about me;
+        
+      (3) Categories of personal information you have collected about me pursuant to the enumerated list of categories in 1798.140(o);
+        
+      (4) Categories of sources from which my personal information is collected;
+        
+      (5) Categories of personal information that you have sold or disclosed for a business purpose about me by each category of personal information enumerated in 1798.140(o);
+        
+      (6) Categories of third parties to whom my personal information was sold or disclosed for a business purpose; and 
+        
+      (7) The business or commercial purpose for collecting or selling my personal information.
+
+      My email address is ${ email_address } and my phone number is ${ client.phone_number }.        If you need any more information from me, please let me know as soon as possible. If          you cannot comply with my request–either in whole or in part–please state the reason          why you cannot comply. If my request is incomplete, please provide me with specific            instructions on how to complete my request.
+
+
+      Sincerely,
+       
+      ${ client }
+always include editable files: False
+under: |
+  **Note**: Clicking this button will send your request directly to ${ company_name_complaint }. **DO NOT** include a DOCX file for editing if you are sending this request directly to ${ company_name_complaint }.
+continue button field: downloaded_right_to_know_email
+---
+id: document for right to know template WEBSITE REQUEST
+question: |
+  Here is your document, ${ client.name.first }:
+email address default: |
+  ${ email_address }
+subquestion: |
+  Copy and paste the letter generated below into ${ company_name_complaint }'s online complaint page at the link you provided here: 
+  
+  ${ business_ccpa_form }
+attachments:
+  - name: Right To Know Request Letter
+    filename: rtk_form
+    valid formats:
+      - docx
+      - pdf 
+    content: |
+     Dear Privacy Compliance Officer,
+      
+     My name is ${ client }. I reside in California and am exercising my data access right         under the California Consumer Privacy Act to see a copy of the categories and the             specific pieces of personal information that ${ company_name_complaint } has collected         about me.
+      
+     I request to see a copy of any and all of the records you have pertaining to me               including but not limited to:
+
+
+     (1) Specific pieces of personal information that you have collected about me including all information or content provided or posted by me, any information you have collected about me, or any personal information you have obtained or acquired about me from a third party business or service provider;
+        
+     (2) Any inferences you have made about me;
+        
+     (3) Categories of personal information you have collected about me pursuant to the enumerated list of categories in 1798.140(o);
+        
+     (4) Categories of sources from which my personal information is collected;
+        
+     (5) Categories of personal information that you have sold or disclosed for a business purpose about me by each category of personal information enumerated in 1798.140(o);
+        
+     (6) Categories of third parties to whom my personal information was sold or disclosed for a business purpose; and 
+        
+     (7) The business or commercial purpose for collecting or selling my personal information.
+
+     My email address is ${ email_address } and my phone number is ${ client.phone_number }.        If you need any more information from me, please let me know as soon as possible. If          you cannot comply with my request–either in whole or in part–please state the reason          why you cannot comply. If my request is incomplete, please provide me with specific            instructions on how to complete my request.
+
+
+     Sincerely,
+       
+     ${ client }
+
+continue button field: downloaded_right_to_know_website
+---
+id: document for opt-out template DEFAULT
+question: |
+  Here is your document, ${ client.name.first }:
+email address default: |
+  ${ email_address }
+subquestion: |
+  With the text generated below, either: 
+  
+  - Copy and paste it into a business's online CCPA complaint page or 
+  
+  - Send it directly to ${ company_name_complaint }'s customer support email address when you find it's contact information.
+attachments:
+  - name: Opt-Out of Sale Request Letter
+    filename: oo_form
+    valid formats:
+      - docx
+      - pdf 
+    content: |
+     Dear Privacy Compliance Officer,
+
+     My name is ${ client }. I reside in California and am exercising my right to opt-out of the sale of my personal information under the California Consumer Privacy Act. I request to opt-out of the future sale of my personal information by ${ company_name_complaint } to third parties.
+          
+     My email address is ${ email_address } and my phone number is ${ client.phone_number }. If you need any more information from me, please let me know as soon as possible. If you cannot comply with my request–either in whole or in part–please state the reason why you cannot comply. If part of my information is subject to an exception, please cease from selling any information that is not subject to such exception. If my request is incomplete, please provide me with specific instructions on how to complete my request.
+
+     Sincerely,
+        
+     ${ client }
+
+continue button field: downloaded_opt_out_default
+---
+id: document for opt-out template EMAIL REQUEST
+question: |
+  Here is your document, ${ client.name.first }:
+email address default: |
+  ${ business_email_address }
+email template: oo_template_email
+subquestion: |
+    With the text generated below, you have the option to either: 
+    
+    - Copy and paste the text of this letter into an email you create or
+    
+    - Send your request directly to ${ company_name_complaint } with the push of the "Send"         button below.
+attachments:
+  - name: Opt-Out of Sale Request Letter
+    filename: oo_form_email
+    valid formats:
+      - docx
+      - pdf
+    content: |
+     Dear Privacy Compliance Officer,
+
+     My name is ${ client }. I reside in California and am exercising my right to opt-out of the sale of my personal information under the California Consumer Privacy Act. I request to opt-out of the future sale of my personal information by ${ company_name_complaint } to third parties.
+          
+     My email address is ${ email_address } and my phone number is ${ client.phone_number }. If you need any more information from me, please let me know as soon as possible. If you cannot comply with my request–either in whole or in part–please state the reason why you cannot comply. If part of my information is subject to an exception, please cease from selling any information that is not subject to such exception. If my request is incomplete, please provide me with specific instructions on how to complete my request.
+
+     Sincerely,
+        
+     ${ client }
+
+always include editable files: False
+under: |
+  **Note**: Clicking this button will send your request directly to ${ company_name_complaint }. **DO NOT** include a DOCX file for editing if you are sending this request directly to ${ company_name_complaint }.
+continue button field: downloaded_opt_out_email
+---
+id: document for opt-out template WEBSITE REQUEST
+question: |
+  Here is your document, ${ client.name.first }:
+email address default: |
+  ${ email_address }
+subquestion: |
+  Copy and paste the letter generated below into ${ company_name_complaint }'s online complaint page at the link you provided here: 
+  
+  ${ business_ccpa_form }
+attachments:
+  - name: Opt-Out of Sale Request Letter
+    filename: oo_form_website
+    valid formats:
+      - docx
+      - pdf 
+    content: |
+     Dear Privacy Compliance Officer,
+
+     My name is ${ client }. I reside in California and am exercising my right to opt-out of the sale of my personal information under the California Consumer Privacy Act. I request to opt-out of the future sale of my personal information by ${ company_name_complaint } to third parties.
+          
+     My email address is ${ email_address } and my phone number is ${ client.phone_number }. If you need any more information from me, please let me know as soon as possible. If you cannot comply with my request–either in whole or in part–please state the reason why you cannot comply. If part of my information is subject to an exception, please cease from selling any information that is not subject to such exception. If my request is incomplete, please provide me with specific instructions on how to complete my request.
+
+     Sincerely,
+        
+     ${ client }
+
+continue button field: downloaded_opt_out_website
+---
+id: document for right to delete template DEFAULT
+question: |
+  Here is your document, ${ client.name.first }:
+email address default: |
+  ${ email_address }
+subquestion: |
+  With the text generated below, either: 
+  
+  - Copy and paste it into a business's online CCPA complaint page or 
+  
+  - Send it directly to ${ company_name_complaint }'s customer support email address when you find it's contact information.
+attachments:
+  - name: Right to Delete Request Letter
+    filename: rtd_form
+    valid formats:
+      - docx
+      - pdf 
+    content: |
+     Dear Privacy Compliance Officer,
+
+     My name is ${ client }. I reside in California and am exercising my right to delete my personal information under the California Consumer Privacy Act. I request that ${ company_name_complaint } deletes all of the information it has collected about me, whether directly from me, through a third party, or through a service provider.
+          
+     My email address is ${ email_address } and my phone number is ${ client.phone_number }. If you need any more information from me, please let me know as soon as possible. If you cannot comply with my request–either in whole or in part–please state the reason why you cannot comply. If part of my information is subject to an exception, please delete all information that is not subject to an exception. If my request is incomplete, please provide me with specific instructions on how to complete my request.
+
+     Sincerely,
+      
+     ${ client } 
+        
+continue button field: downloaded_right_to_delete_default
+---
+id: document for right to delete template EMAIL REQUEST
+question: |
+  Here is your document, ${ client.name.first }:
+email address default: |
+  ${ business_email_address }
+email template: rtd_template_email
+subquestion: |
+    With the text generated below, you have the option to either: 
+    
+    - Copy and paste the text of this letter into an email you create or
+    
+    - Send your request directly to ${ company_name_complaint } with the push of the "Send"         button below.
+attachments:
+  - name: Right to Delete Request Letter
+    filename: rtd_form_email
+    valid formats:
+      - docx
+      - pdf 
+    content: |
+      Dear Privacy Compliance Officer,
+
+      My name is ${ client }. I reside in California and am exercising my right to delete my         personal information under the California Consumer Privacy Act. I request that ${             company_name_complaint } deletes all of the information it has collected about me,             whether directly from me, through a third party, or through a service provider.
+          
+      My email address is ${ email_address } and my phone number is ${ client.phone_number }.       If you need any more information from me, please let me know as soon as possible. If you       cannot comply with my request–either in whole or in part–please state the reason why you       cannot comply. If part of my information is subject to an exception, please delete all         information that is not subject to an exception. If my request is incomplete, please           provide me with specific instructions on how to complete my request.
+
+      Sincerely,
+      
+      ${ client }
+
+always include editable files: False
+under: |
+  **Note**: Clicking this button will send your request directly to ${ company_name_complaint }. **DO NOT** include a DOCX file for editing if you are sending this request directly to ${ company_name_complaint }.
+continue button field: downloaded_right_to_delete_email
+---
+id: document for right to delete template WESBITE REQUEST
+question: |
+  Here is your document, ${ client.name.first }:
+email address default: |
+  ${ email_address }
+subquestion: |
+  Copy and paste the letter generated below into ${ company_name_complaint }'s online complaint page at the link you provided here: 
+  
+  ${ business_ccpa_form }
+attachments:
+  - name: Right to Delete Request Letter
+    filename: rtd_form_website
+    valid formats:
+      - docx
+      - pdf 
+    content: |
+      Dear Privacy Compliance Officer,
+
+      My name is ${ client }. I reside in California and am exercising my right to delete my         personal information under the California Consumer Privacy Act. I request that ${             company_name_complaint } deletes all of the information it has collected about me,             whether directly from me, through a third party, or through a service provider.
+          
+      My email address is ${ email_address } and my phone number is ${ client.phone_number }.       If you need any more information from me, please let me know as soon as possible. If you       cannot comply with my request–either in whole or in part–please state the reason why you       cannot comply. If part of my information is subject to an exception, please delete all         information that is not subject to an exception. If my request is incomplete, please           provide me with specific instructions on how to complete my request.
+
+      Sincerely,
+      
+      ${ client }
+        
+continue button field: downloaded_right_to_delete_website
+---
+id: email template for users to send rtk email to business directly
+template: rtk_template_email
+subject: |
+  ${ client } CCPA Request
+content: |
+  Dear Privacy Compliance Officer,
+      
+  My name is ${ client }. I reside in California and am exercising my data access right         under the California Consumer Privacy Act to see a copy of the categories and the             specific pieces of personal information that ${ company_name_complaint } has collected         about me.
+      
+  I request to see a copy of any and all of the records you have pertaining to me               including but not limited to:
+
+
+  (1) Specific pieces of personal information that you have collected about me including all information or content provided or posted by me, any information you have collected about me, or any personal information you have obtained or acquired about me from a third party business or service provider;
+        
+  (2) Any inferences you have made about me;
+        
+  (3) Categories of personal information you have collected about me pursuant to the enumerated list of categories in 1798.140(o);
+        
+  (4) Categories of sources from which my personal information is collected;
+        
+  (5) Categories of personal information that you have sold or disclosed for a business purpose about me by each category of personal information enumerated in 1798.140(o);
+        
+  (6) Categories of third parties to whom my personal information was sold or disclosed for a business purpose; and 
+        
+  (7) The business or commercial purpose for collecting or selling my personal information.
+
+  My email address is ${ email_address } and my phone number is ${ client.phone_number }.        If you need any more information from me, please let me know as soon as possible. If          you cannot comply with my request–either in whole or in part–please state the reason          why you cannot comply. If my request is incomplete, please provide me with specific            instructions on how to complete my request.
+  
+  **This email was sent through The Suffolk LIT Lab CCPA Request App. Any and all responses to this request should be sent to ${ email_address }.**
+
+
+  Sincerely,
+       
+  ${ client }
+---
+id: email template for users to send oo email to business directly
+template: oo_template_email
+subject: |
+  ${ client } CCPA Request
+content: |
+ Dear Privacy Compliance Officer,
+
+ My name is ${ client }. I reside in California and am exercising my right to opt-out of the sale of my personal information under the California Consumer Privacy Act. I request to opt-out of the future sale of my personal information by ${ company_name_complaint } to third parties.
+          
+ My email address is ${ email_address } and my phone number is ${ client.phone_number }.        If you need any more information from me, please let me know as soon as possible. If you      cannot comply with my request–either in whole or in part–please state the reason why you      cannot comply. If part of my information is subject to an exception, please cease from        selling any information that is not subject to such exception. If my request is                incomplete, please provide me with specific instructions on how to complete my request.
+
+  **This email was sent through The Suffolk LIT Lab CCPA Request App. Any and all responses to this request should be sent to ${ email_address }.**
+
+ Sincerely,
+        
+ ${ client }
+---
+id: email template for users to send rtd email to business directly
+template: rtd_template_email
+subject: |
+  ${ client } CCPA Request
+content: |
+ Dear Privacy Compliance Officer,
+
+ My name is ${ client }. I reside in California and am exercising my right to delete my personal information under the California Consumer Privacy Act. I request that ${ company_name_complaint } deletes all of the information it has collected about me, whether directly from me, through a third party, or through a service provider.
+          
+ My email address is ${ email_address } and my phone number is ${ client.phone_number }. If you need any more information from me, please let me know as soon as possible. If you cannot comply with my request–either in whole or in part–please state the reason why you cannot comply. If part of my information is subject to an exception, please delete all information that is not subject to an exception. If my request is incomplete, please provide me with specific instructions on how to complete my request.
+
+  **This email was sent through The Suffolk LIT Lab CCPA Request App. Any and all responses to this request should be sent to ${ email_address }.**
+
+ Sincerely,
+      
+ ${ client } 
+---
+mandatory: True
+id: asking the user if there is another business they would like to asser their CCPA rights against
+#creating another request at the end of the form does not properly loop the process. I want te user to select YES and then be directed to company_name_complaint with reset variables.
+event: user_has_another_complaint
+question: Is there another business you would like to assert your CCPA rights against?
+buttons:
+  - Yes: restart
+action buttons:
+  - label: I Am All Set
+    action: https://docassemble.org
+    color: danger
+  - label: Learn More
+    action: https://www.consumer-action.org/downloads/english/CCPA-Privacy-Rights_2022.pdf
+    color: link
+    icon: sign-out-alt
+    new window: True
+---
+event: not_CA_final_screen
+question: |
+  Thank You
+subquestion: |
+  Although you are not a California resident, your state may have its own Data Privacy protection.
+back button: True
+back button label: |
+  Actually, I am from California
+action buttons:
+  - label: Check State Data Privacy Protections
+    action: https://www.ncsl.org/research/telecommunications-and-information-technology/state-laws-related-to-internet-privacy.aspx#:~:text=Three%20states%E2%80%94California%2C%20Colorado%20and,of%20personal%20information%2C%20among%20others.
+    color: success
+    icon: sign-out-alt
+    new window: True
+  - label: I Am All Set
+    action: https://docassemble.org
+    color: warning
+---
+event: no_issue_final_screen
+question: Remember, as a California resident you have the right to control your personal information.
+back button: True
+back button label: |
+  Actually, I do have an issue
+action buttons:
+  - label: Exit
+    action: https://docassemble.org
+    color: warning
+---
+modules:
+  - docassemble.ALToolbox.misc
+---
+features:
+  css: docassemble.ALToolbox:collapse_template.css
