@@ -7,7 +7,6 @@ objects:
   - client: Individual
   # current issues:
     #creating another request at the end of the form does not properly loop the process
-    #checkboxes can check multiple fields
     #remove DOCX option for email and maybe even PDF attachment
 ---
 mandatory: True
@@ -185,7 +184,6 @@ content: |
     If you are unsure whether the business is subject to the CCPA, you may still request to control your data. If the the business is not subject to the CCPA, it has no obligation to accept your request and will respond accordingly. 
 ---
 id: determining the rights that the user would like to excericse against business.\
-#I don't want the user to be able to check multiple fields in these checkboxes. I like the look of the checkboxes and the datatype that makes it easy for me to use conditional logic on, but I want this question to be knowledge OR opting OR neither.
 question:
   "Which CCPA right would you like to exercise?"
 fields:
